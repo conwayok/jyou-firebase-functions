@@ -1,1 +1,3 @@
-jyou-firebase-functions
+# jyou-firebase-functions
+
+firebase functions code for JYou app
