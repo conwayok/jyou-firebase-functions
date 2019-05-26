@@ -22,8 +22,6 @@ exports.requestpair = functions.https.onRequest(async (request, response) => {
             });
         });
 
-        console.log(waitingUsers);
-
         // if more than two people are waiting to pair
         if (waitingUsers.length > 0) {
             // remove uid from waiting queue
@@ -34,31 +32,46 @@ exports.requestpair = functions.https.onRequest(async (request, response) => {
             console.log('pairing ' + uid1 + ' and ' + uid2);
             const roomId = uid1 + "_" + uid2;
 
-            // get tags and tokens
+            // get tags, tokens and rooms
             let tag1 = '';
             let tag2 = '';
             let token1 = '';
             let token2 = '';
+            let rooms1 = [];
+            let rooms2 = [];
 
-            await usersDb.once('value').then((snapshot) => {
-                snapshot.forEach((child) => {
-                    if (child.val()['uid'] === uid1) {
-                        tag1 = child.val()['tags'][0];
-                        token1 = child.val()['token'];
-                    } else if (child.val()['uid'] === uid2) {
-                        tag2 = child.val()['tags'][0];
-                        token2 = child.val()['token'];
-                    }
-                })
+            await usersDb.child(uid1).once('value').then((snapshot) => {
+                tag1 = snapshot.val()['tags'][0];
+                token1 = snapshot.val()['token'];
+                rooms1 = snapshot.val()['rooms'];
             });
 
-            console.log(tag1, token1, tag2, token2);
+            await usersDb.child(uid2).once('value').then((snapshot) => {
+                tag2 = snapshot.val()['tags'][0];
+                token2 = snapshot.val()['token'];
+                rooms2 = snapshot.val()['rooms'];
+            });
 
-            // create room
-            await roomsDb.child(roomId + '/tags').set([tag1, tag2]);
+            console.log('create room ' + roomId);
+
+            // create room and set tags
+            await roomsDb.child(roomId + '/tags/' + uid1).set([tag1]);
+            await roomsDb.child(roomId + '/tags/' + uid2).set([tag2]);
+
+            // add room to users
+            if (typeof rooms1 === 'undefined')
+                rooms1 = [roomId];
+            else
+                rooms1.push(roomId);
+            if (typeof rooms2 === 'undefined')
+                rooms2 = [roomId];
+            else
+                rooms2.push(roomId);
+
+            await usersDb.child(uid1 + '/rooms').set(rooms1);
+            await usersDb.child(uid2 + '/rooms').set(rooms2);
 
             // send notification
-            // const payload = "{notification:{title:" + roomId + ",body: \"配對成功\"}}";
             const payload = {
                 notification: {
                     title: roomId,
