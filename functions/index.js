@@ -75,9 +75,11 @@ exports.requestpair = functions.https.onRequest(async (request, response) => {
             const payload = {
                 notification: {
                     title: roomId,
-                    body: '配對成功'
+                    body: '配對成功',
                 },
-                match: true
+                data: {
+                    match: 'true'
+                }
             };
 
             console.log('send notification to ' + token1);
