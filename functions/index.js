@@ -76,7 +76,8 @@ exports.requestpair = functions.https.onRequest(async (request, response) => {
                 notification: {
                     title: roomId,
                     body: '配對成功'
-                }
+                },
+                match: true
             };
 
             console.log('send notification to ' + token1);
